@@ -1,5 +1,7 @@
 let map;
 let startLine;
+let laps = {};
+let lap_count = 0;
 
 const start_lines = {
     'sdby-fengtai': turf.lineString([[116.194925, 39.794226], [116.195097, 39.794415]]),
@@ -112,11 +114,10 @@ function parseGPX(xmlString) {
         }
     }
     if (startLine) {
-        const laps = splitIntoLaps(points, startLine);
-        displaySpeedChart(points, laps);
+        splitIntoLaps(points, startLine);
+        displaySpeedChart();
     } else {
 		displayMap(points);
-        // displaySpeedChart(points, null);
     }
 }
 
@@ -171,12 +172,31 @@ function calculate_speeds(points) {
     return [speeds, distances.slice(1)];
 }
 
+
+function createLap(points) {
+	const lap_name = lap_count++;
+	const speed_and_dis = calculate_speeds(points);
+	const speeds = speed_and_dis[0];
+	const distances = speed_and_dis[1];
+	const times = points.slice(1).map(p => (p.time - points[0].time) * 1e-3);
+	const laptime = times.slice(-1)[0];
+	const color = colormap[lap_name % colormap.length];
+
+	laps[lap_name] = {
+		laptime: laptime,
+		points: points,
+		speeds: speeds,
+		distances: distances,
+		times: times,
+		color: color,
+		curve: displayMap(points, color)
+	};
+}
+
 function splitIntoLaps(points, startLine) {
-    const laps = [];
     let currentLap = [];
-    
     const startLineFeature = turf.lineString(startLine.geometry.coordinates);
-    
+
     for (let i = 1; i < points.length; i++) {
         const p1 = points[i - 1];
         const p2 = points[i];
@@ -185,7 +205,7 @@ function splitIntoLaps(points, startLine) {
         const intersection = turf.lineIntersect(segment, startLineFeature);
 
 		if (intersection.features.length > 0 && currentLap.length > 30) {
-			laps.push(currentLap);
+			createLap(currentLap);
 			currentLap = [p2];
 		} else {
             currentLap.push(p2);
@@ -193,68 +213,30 @@ function splitIntoLaps(points, startLine) {
     }
     
     if (currentLap.length > 0) {
-        laps.push(currentLap);
+		createLap(currentLap);
     }
-
-    return laps;
 }
 
-function displaySpeedChart(points, laps) {
-    const selector = document.getElementById('chart-selector');
-    const selected = selector.value;
-    
-    if (selected === 'total') {
-        const speeds = calculate_speeds(points);
-        const times = points.slice(1).map(p => p.time.toISOString());
-        
-        const data = [{
-            x: times,
-            y: speeds,
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Speed',
-            yaxis: 'y1',
-            line: { color: 'rgb(16, 112, 2)' },
-            marker: { color: 'rgb(16, 112, 2)' }
-        }];
-        
-        const layout = {
-            title: 'Total Speed Over Time',
-            xaxis: { title: 'Time (s)' },
-            yaxis: { title: 'Speed (km/h)' }
-        };
-        
-        Plotly.newPlot('speed-chart', data, layout);
-    } else if (selected === 'laps' && laps && laps.length > 0) {
-        const lapSpeedTraces = laps.slice(1, -1).map((lap, index) => {
-			const speed_and_dis = calculate_speeds(lap);
-            const speeds = speed_and_dis[0];
-            const distances = speed_and_dis[1];
-            const times = lap.slice(1).map(p => (p.time - lap[0].time) * 1e-3);
-			const laptime = times.slice(-1)[0];
-			displayMap(lap, colormap[index % colormap.length]);
-            return {
-                x: distances,
-                y: speeds,
-                type: 'scatter',
-                mode: 'lines',
-                name: `Lap ${index + 1} (${laptime} s)`,
-                yaxis: 'y1',
-				visible: 'legendonly',
-                line: { color: colormap[index % colormap.length] },
-                marker: { color: colormap[index % colormap.length] }
-            };
-        });
-        
-        const layout = {
-            title: 'Lap Speeds Over Distance',
-            xaxis: { title: 'Distance / km' },
-            yaxis: { title: 'Speed (m/s)' }
-        };
-		if (document.getElementById('speed-chart').innerHTML == '') {        
-			Plotly.newPlot('speed-chart', lapSpeedTraces, layout);
-		} else {
-			Plotly.addTraces('speed-chart', lapSpeedTraces);
-		}
-    }
+function displaySpeedChart() {
+	let lapSpeedTraces = [];
+	for (var i in laps) {
+		lapSpeedTraces.push({
+			x: laps[i].distances,
+			y: laps[i].speeds,
+			type: 'scatter',
+			mode: 'lines',
+			name: `Lap ${i} (${laps[i].laptime} s)`,
+			yaxis: 'y1',
+			visible: 'legendonly',
+			line: { color: laps[i].color },
+			marker: { color: laps[i].color }
+		});
+	}
+	
+	const layout = {
+		title: 'Lap Speeds Over Distance',
+		xaxis: { title: 'Distance / km' },
+		yaxis: { title: 'Speed (m/s)' }
+	};
+	Plotly.newPlot('speed-chart', lapSpeedTraces, layout);
 }
