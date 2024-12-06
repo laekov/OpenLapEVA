@@ -150,6 +150,7 @@ function haversine_distance(lat1, lon1, lat2, lon2) {
 function calculate_speeds(points) {
     const speeds = [];
     const distances = [0];
+    const posses = [];
     var j = 0;
     for (let i = 1; i < points.length; i++) {
         const p1 = points[j];
@@ -172,8 +173,12 @@ function calculate_speeds(points) {
         }
         speeds.push(speed);
 		distances.push(distances.at(-1) + distance * 1e-3); // km
+        posses.push({
+            lat: (p1.lat + p2.lat) / 2,
+            lon: (p1.lon + p2.lon) / 2
+        });
     }
-    return [speeds, distances.slice(1)];
+    return [speeds, distances.slice(1), posses];
 }
 
 
@@ -190,6 +195,7 @@ function createLap(points) {
 		laptime: laptime,
 		points: points,
 		speeds: speeds,
+        posses: speed_and_dis[2],
 		distances: distances,
 		times: times,
 		color: color,
@@ -246,33 +252,26 @@ function removeMarkerFromMap() {
 
 function displaySpeedChart() {
 	let lapSpeedTraces = [];
+
+    const selector = document.getElementById('chart-selector');
+    const selected = selector.value;
+
 	for (var i in laps) {
 		lapSpeedTraces.push({
-			x: laps[i].distances,
+            x: selected == 'distance' ? laps[i].distances : laps[i].times,
 			y: laps[i].speeds,
 			type: 'scatter',
 			mode: 'lines',
 			name: `Lap ${i} (${laps[i].laptime} s)`,
 			yaxis: 'y1',
 			visible: 'legendonly',
-			line: { color: laps[i].color },
-			marker: { color: laps[i].color },
-			selected: {
-				marker: {
-					opacity: 1
-				}
-			},
-			unselected: {
-				marker: {
-					opacity: 0.2
-				}
-			}
+			line: { color: laps[i].color }
 		});
 	}
 	
 	const layout = {
 		title: 'Lap Speeds Over Distance',
-		xaxis: { title: 'Distance / km' },
+		xaxis: { title: selected == 'distance' ? 'Distance / km' : 'Time / s' },
 		yaxis: { title: 'Speed (m/s)' }
 	};
 	Plotly.newPlot('speed-chart', lapSpeedTraces, layout);
@@ -288,7 +287,6 @@ function displaySpeedChart() {
                 const coordinates = laps[idx].points.map(point => [point.lat, point.lon]);
                 map.fitBounds(coordinates);
 			} else {
-				console.log('Trye to hide ', idx);
 				map.removeLayer(laps[idx].trail);
 			}
 		}
@@ -300,8 +298,8 @@ function displaySpeedChart() {
             var point = points[i];
             var lapIndex = point.curveNumber;
             var pointIndex = point.pointNumber;
-            var latitude = laps[lapIndex].points[pointIndex].lat;
-            var longitude = laps[lapIndex].points[pointIndex].lon;
+            var latitude = laps[lapIndex].posses[pointIndex].lat;
+            var longitude = laps[lapIndex].posses[pointIndex].lon;
             showMarkerOnMap(lapIndex, latitude, longitude, laps[lapIndex].color);
         }
     });
