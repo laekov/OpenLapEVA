@@ -14,9 +14,10 @@
 <body>
     <h1>GPX File Analyzer</h1>
     <input type="file" id="file-input" accept=".gpx">
+    <label> X-axis type</label>
     <select id="chart-selector">
-        <option value="laps">Lap Speeds</option>
-        <option value="total">Total Speed</option>
+        <option value="distance">Distance</option>
+        <option value="time">Time</option>
     </select>
     <div id="map"></div>
     <div id="speed-chart"></div>
