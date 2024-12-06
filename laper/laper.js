@@ -100,6 +100,7 @@ function parseGPX(xmlString) {
         }
         points.push({ lat: parseFloat(lat), lon: parseFloat(lon), ele: parseFloat(ele), time: new Date(time) });
     }
+    points.sort((a, b) => { a.time - b.time; });
 
     console.log(`Find ${points.length} points in the file`);
     
@@ -220,6 +221,29 @@ function splitIntoLaps(points, startLine) {
     }
 }
 
+var markers = {};
+
+function showMarkerOnMap(idx, lat, lon, color) {
+    if (!markers[idx]) {
+        markers[idx] = L.circleMarker([lat, lon], {
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.5
+        }).addTo(map);
+    } else {
+        markers[idx].setLatLng([lat, lon]);
+    }
+    map.panTo([lat, lon]);
+}
+
+
+function removeMarkerFromMap() {
+    for (var i in markers) {
+        map.removeLayer(markers[i]);
+        delete markers[i];
+    }
+}
+
 function displaySpeedChart() {
 	let lapSpeedTraces = [];
 	for (var i in laps) {
@@ -253,8 +277,8 @@ function displaySpeedChart() {
 	};
 	Plotly.newPlot('speed-chart', lapSpeedTraces, layout);
 
-	const myDiv = document.getElementById('speed-chart');
-	myDiv.on('plotly_restyle', function(eventData) {
+	const chart = document.getElementById('speed-chart');
+	chart.on('plotly_restyle', function(eventData) {
 		const n = eventData[0].visible.length;
         if (!map) initMap();
 		for (let i = 0; i < n; ++i) {
@@ -269,4 +293,20 @@ function displaySpeedChart() {
 			}
 		}
 	});
+
+    chart.on('plotly_hover', function(eventData) {
+        var points = eventData.points;
+        for (var i = 0; i < points.length; ++i) {
+            var point = points[i];
+            var lapIndex = point.curveNumber;
+            var pointIndex = point.pointNumber;
+            var latitude = laps[lapIndex].points[pointIndex].lat;
+            var longitude = laps[lapIndex].points[pointIndex].lon;
+            showMarkerOnMap(lapIndex, latitude, longitude, laps[lapIndex].color);
+        }
+    });
+
+    chart.on('plotly_unhover', function(eventData) {
+        removeMarkerFromMap();
+    });
 }

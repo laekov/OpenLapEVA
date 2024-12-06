@@ -16,8 +16,8 @@ Here is [A simple demo of OpenLapEVA](https://laekov.com.cn/l/aper/) showing the
 * [x] Upload GPX file
 * [x] Drawing or automatic matching the start/finish lines and break the trail into laps
 * [x] Smooth the speed curve and plot with distance
-* [ ] Show / hide trails according to lap selection
-* [ ] Indicate current location on the map according to selection on the speed curve
+* [x] Show / hide trails according to lap selection
+* [x] Indicate current location on the map according to selection on the speed curve
 * [ ] Upload LRV / MP4 file
   * [ ] Extract GPX
   * [ ] Synchronous video play and track movement
