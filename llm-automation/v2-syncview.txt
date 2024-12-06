@@ -1,0 +1,23 @@
+#!/bin/bash
+echo """
+下面是一份将 gpx 文件中的速度和轨迹分别显示在不同的 html 组件的网页程序.
+
+html:
+"""
+
+cat laper/index.html
+
+echo """
+javascript:
+"""
+
+cat laper/laper.js
+
+echo """
+这个网页使用了 plotly js 来画图, leaflet 来画地图.
+
+请在此基础上增加以下的功能:
+
+* 当在 speed-chart 中选中或取消选中某个 lap 的时候, 在 map 中对应地显示或取消显示相应圈的轨迹.
+* 当在 spped-chart 的曲线上移动鼠标时, 在地图中用一个圈标出这个点所对应的位置.
+"""
