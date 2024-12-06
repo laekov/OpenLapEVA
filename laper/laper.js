@@ -101,7 +101,7 @@ function parseGPX(xmlString) {
         points.push({ lat: parseFloat(lat), lon: parseFloat(lon), ele: parseFloat(ele), time: new Date(time) });
     }
 
-    console.log(`Founds ${points.length} points in the file`);
+    console.log(`Find ${points.length} points in the file`);
     
     if (!startLine) {
         for (let i in start_lines) {
@@ -121,11 +121,14 @@ function parseGPX(xmlString) {
     }
 }
 
-function displayMap(points, color='red') {
+function displayMap(points, color='red', show=true) {
     if (!map) initMap();
     const coordinates = points.map(point => [point.lat, point.lon]);
-    L.polyline(coordinates, { color: color }).addTo(map);
-    map.fitBounds(coordinates);
+    const out = L.polyline(coordinates, { color: color });
+    if (show) {
+        addTo(map);
+    }
+	return out;
 }
 
 function haversine_distance(lat1, lon1, lat2, lon2) {
@@ -189,7 +192,7 @@ function createLap(points) {
 		distances: distances,
 		times: times,
 		color: color,
-		curve: displayMap(points, color)
+		trail: displayMap(points, color, false)
 	};
 }
 
@@ -229,7 +232,17 @@ function displaySpeedChart() {
 			yaxis: 'y1',
 			visible: 'legendonly',
 			line: { color: laps[i].color },
-			marker: { color: laps[i].color }
+			marker: { color: laps[i].color },
+			selected: {
+				marker: {
+					opacity: 1
+				}
+			},
+			unselected: {
+				marker: {
+					opacity: 0.2
+				}
+			}
 		});
 	}
 	
@@ -239,4 +252,21 @@ function displaySpeedChart() {
 		yaxis: { title: 'Speed (m/s)' }
 	};
 	Plotly.newPlot('speed-chart', lapSpeedTraces, layout);
+
+	const myDiv = document.getElementById('speed-chart');
+	myDiv.on('plotly_restyle', function(eventData) {
+		const n = eventData[0].visible.length;
+        if (!map) initMap();
+		for (let i = 0; i < n; ++i) {
+			const idx = eventData[1][i];
+			if (eventData[0].visible[i] === true) {
+				map.addLayer(laps[idx].trail);
+                const coordinates = laps[idx].points.map(point => [point.lat, point.lon]);
+                map.fitBounds(coordinates);
+			} else {
+				console.log('Trye to hide ', idx);
+				map.removeLayer(laps[idx].trail);
+			}
+		}
+	});
 }
