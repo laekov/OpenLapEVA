@@ -18,9 +18,9 @@ Here is [A simple demo of OpenLapEVA](https://laekov.com.cn/l/aper/) showing the
 * [x] Smooth the speed curve and plot with distance
 * [x] Show / hide trails according to lap selection
 * [x] Indicate current location on the map according to selection on the speed curve
-* [ ] Upload LRV / MP4 file
-  * [ ] Extract GPX
-  * [ ] Synchronous video play and track movement
+* [x] Upload LRV / MP4 file
+  * [x] Extract GPS data (and speed which is more accurate)
+  * [x] Synchronous video play and track movement
   * [ ] Comparing multiple videos
 * [ ]  (endless) UI improvement
 
