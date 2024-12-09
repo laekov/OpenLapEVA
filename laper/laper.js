@@ -22,16 +22,41 @@ const colormap = [
     'rgb(188, 189, 34)'
 ];
 
-document.getElementById('file-input').addEventListener('change', function(event) {
-    const file = event.target.files[0];
+function parseFile(file) {
     if (file) {
+		const type = file.type;
         const reader = new FileReader();
         reader.onload = function(e) {
             const contents = e.target.result;
-            parseGPX(contents);
+			if (type === 'application/gpx+xml') {
+				updateTrail(parseGPX(contents));
+			} else {
+				const binfile = new window.Buffer(contents);
+				window.GPMFExtract(binfile).then(res => {		
+					window.GoProTelemetry(res, {}, telemetry => {
+						updateTrail(parseGPMF(telemetry[1].streams.GPS5));
+					});
+				});
+			}
         };
-        reader.readAsText(file);
+
+		if (type === 'application/gpx+xml') {
+			reader.readAsText(file);
+		} else {
+			const videoElement = document.getElementById('videoElement');
+			videoElement.src = URL.createObjectURL(file);
+			videoElement.load();
+			// videoElement.play();
+			document.getElementById('videoPlayer').style.display = 'block';
+
+			reader.readAsArrayBuffer(file);
+		}
     }
+}
+
+document.getElementById('file-input').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+	parseFile(file);
 });
 
 function initMap() {
@@ -70,12 +95,7 @@ function initMap() {
         const fileInput = document.getElementById('file-input');
         if (fileInput.files.length > 0) {
             const file = fileInput.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const contents = e.target.result;
-                parseGPX(contents);
-            };
-            reader.readAsText(file);
+			parseFile(file);
         }
     });
 }
@@ -101,9 +121,33 @@ function parseGPX(xmlString) {
         points.push({ lat: parseFloat(lat), lon: parseFloat(lon), ele: parseFloat(ele), time: new Date(time) });
     }
     points.sort((a, b) => { a.time - b.time; });
+    console.log(`Find ${points.length} points in the gpx file`);
+	return points;
+}
 
-    console.log(`Find ${points.length} points in the file`);
-    
+function parseGPMF(gps5) {
+	const points = [];
+	for (let i = 0; i < gps5.samples.length; ++i) {
+		const lat = gps5.samples[i].value[0];
+		const lon = gps5.samples[i].value[1];
+		const ele = gps5.samples[i].value[2];
+		const time = gps5.samples[i].date;
+		const cts = gps5.samples[i].cts;
+		const speed = gps5.samples[i].value[4];
+		points.push({
+			lat: lat,
+			lon: lon,
+			ele: ele,
+			time: time,
+			cts: cts,
+			speed: speed
+		});
+	}
+    console.log(`Find ${points.length} points in the video file`);
+	return points;
+}
+
+function updateTrail(points) {
     if (!startLine) {
         for (let i in start_lines) {
             var p = start_lines[i].geometry.coordinates[0];
@@ -122,13 +166,16 @@ function parseGPX(xmlString) {
     }
 }
 
-function displayMap(points, color='red', show=true) {
+function displayMap(points, color='red', show=true, scale=true) {
     if (!map) initMap();
     const coordinates = points.map(point => [point.lat, point.lon]);
     const out = L.polyline(coordinates, { color: color });
     if (show) {
-        addTo(map);
+        out.addTo(map);
     }
+	if (scale) {
+		map.fitBounds(coordinates);
+	}
 	return out;
 }
 
@@ -160,8 +207,13 @@ function calculate_speeds(points) {
 		if (time_diff < 0) {
             continue;
 		}
-        var speed = distance / time_diff; // speed in meters per second
-		speed *= 3.6; // kph
+		let speed;
+		if ('speed' in p1 && 'speed' in p2) {
+			speed  = (p1.speed + p2.speed) / 2 * 3.6;
+		} else {
+			speed = distance / time_diff; // speed in meters per second
+			speed *= 3.6; // kph
+		}
         if (speeds.length > 0) {
             const a = (speed - speeds.at(-1)) / 3.6 / time_diff; // m/s^2
             if (Math.abs(a) > 80) { // A too large is not that possible
@@ -173,10 +225,14 @@ function calculate_speeds(points) {
         }
         speeds.push(speed);
 		distances.push(distances.at(-1) + distance * 1e-3); // km
-        posses.push({
+		var pos = {
             lat: (p1.lat + p2.lat) / 2,
             lon: (p1.lon + p2.lon) / 2
-        });
+        }
+		if ('cts' in p1 && 'cts' in p2) {
+			pos.cts = (p1.cts + p2.cts) / 2;
+		}
+        posses.push(pos);
     }
     return [speeds, distances.slice(1), posses];
 }
@@ -199,7 +255,7 @@ function createLap(points) {
 		distances: distances,
 		times: times,
 		color: color,
-		trail: displayMap(points, color, false)
+		trail: displayMap(points, color, false, false)
 	};
 }
 
@@ -250,6 +306,9 @@ function removeMarkerFromMap() {
     }
 }
 
+const videoElement = document.getElementById('videoElement');
+
+
 function displaySpeedChart() {
 	let lapSpeedTraces = [];
 
@@ -298,9 +357,13 @@ function displaySpeedChart() {
             var point = points[i];
             var lapIndex = point.curveNumber;
             var pointIndex = point.pointNumber;
-            var latitude = laps[lapIndex].posses[pointIndex].lat;
-            var longitude = laps[lapIndex].posses[pointIndex].lon;
+			var point = laps[lapIndex].posses[pointIndex];
+            var latitude = point.lat;
+            var longitude = point.lon;
             showMarkerOnMap(lapIndex, latitude, longitude, laps[lapIndex].color);
+			if (i === 0 && 'cts' in point) {
+				videoElement.currentTime = point.cts / 1000;
+			}
         }
     });
 

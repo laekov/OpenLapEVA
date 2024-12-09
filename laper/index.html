@@ -13,7 +13,7 @@
 </head>
 <body>
     <h1>GPX File Analyzer</h1>
-    <input type="file" id="file-input" accept=".gpx">
+    <input type="file" id="file-input" accept=".gpx, video/mp4, .lrv, .LRV">
     <label> X-axis type</label>
     <select id="chart-selector">
         <option value="distance">Distance</option>
@@ -21,11 +21,21 @@
     </select>
     <div id="map"></div>
     <div id="speed-chart"></div>
+    <div id="videoPlayer" style="display:none;">
+        <video id="videoElement" controls></video>
+        <div id="video-controls">
+            <button id="prevFrame">Previous Frame</button>
+            <button id="nextFrame">Next Frame</button>
+        </div>
+    </div>
+
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.2/leaflet.draw.js"></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf/dist/turf.min.js"></script>
+    <script src="gpmf.js"></script>
+    <script src="gopro.js"></script>
     <script src="laper.js">
         // JavaScript code will go here
     </script>
