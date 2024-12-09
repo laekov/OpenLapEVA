@@ -1,6 +1,7 @@
 let map;
 let startLine;
 let laps = {};
+let rawtrail;
 let lap_count = 0;
 
 const start_lines = {
@@ -145,6 +146,7 @@ function parseGPMF(gps5) {
 		});
 	}
     console.log(`Find ${points.length} points in the video file`);
+	rawtrail = points;
 	return points;
 }
 
@@ -372,3 +374,42 @@ function displaySpeedChart() {
         removeMarkerFromMap();
     });
 }
+
+function findFrame(points, target) {
+	let left = 0, right = points.length;
+	while (left + 1 < right) {
+		let mid = (left + right) >> 1;
+		if (target < rawtrail[mid].cts) {
+			right = mid;
+		} else {
+			left = mid + 1;
+		}
+	}
+	return left;
+}
+
+videoElement.addEventListener("timeupdate", () => {
+	const t = videoElement.currentTime * 1e3;
+	if (rawtrail && 'cts' in rawtrail[0]) {
+		let p = findFrame(rawtrail, t);
+		showMarkerOnMap(0, rawtrail[p].lat, rawtrail[p].lon, 'red');
+	}
+});
+
+document.getElementById('nextFrame').addEventListener('click', () => {
+	const t = videoElement.currentTime * 1e3;
+	let p = findFrame(rawtrail, t);
+	if (rawtrail[p + 1].cts < t + 10) {
+		++p;
+	}
+    videoElement.currentTime = rawtrail[p + 1].cts * 1e-3;
+});
+
+document.getElementById('prevFrame').addEventListener('click', () => {
+	const t = videoElement.currentTime * 1e3;
+	let p = findFrame(rawtrail, t);
+	if (rawtrail[p - 1].cts > t - 10) {
+		--p;
+	}
+    videoElement.currentTime = rawtrail[p - 1].cts * 1e-3;
+});
