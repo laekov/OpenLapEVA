@@ -61,8 +61,9 @@ document.getElementById('file-input').addEventListener('change', function(event)
 
 function initMap() {
     map = L.map('map').setView([39.79422, 116.194925], 16);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+	L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+		maxZoom: 20,
+		attribution: 'Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
     
     const drawnItems = new L.FeatureGroup();
