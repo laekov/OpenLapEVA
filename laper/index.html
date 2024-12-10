@@ -6,12 +6,27 @@
     <title>Open Lap EVA</title>
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/leaflet/1.0.2/leaflet.css"/>
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/leaflet.draw/1.0.2/leaflet.draw.css"/>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
     <style>
         #map { height: 400px; }
         #speed-chart { height: 400px; }
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+        }
+        .video-wrapper video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body>
+
     <h1>Open Lap Extracting - Visualizing - Analyzing</h1>
     <input type="file" id="file-input" accept=".gpx, video/mp4, .lrv, .LRV">
     <label> X-axis type</label>
@@ -19,6 +34,41 @@
         <option value="distance">Distance</option>
         <option value="time">Time</option>
     </select>
+    <div id="laptable">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Laptime</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(item, index) in data" :key="index"
+                    @click="singleClick(index)"
+                    @dblclick="doubleClick(index)"
+                    >
+                    <td :style="{ 'backgroundColor': isSelected(index) ? colormap[selectedRows.indexOf(index) % colormap.length] : '#afafaf'}">
+                    <span>  </span>
+                    </td>
+                    <td>{{ item.name }} - {{ item.idx }}</td>
+                    <td>{{ item.laptime }}</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class='row'>
+            <div class='col-sm' v-for="i in selectedRows">
+                <p>
+                <span :style="{ 'backgroundColor': colormap[selectedRows.indexOf(i) % colormap.length] }">__</span>
+                {{ laps[i].name }} lap {{ laps[i].idx }}
+                </p>
+                <div class="video-wrapper">
+                    <video :id="'ve' + i" controls :src='runs[laps[i].name].video'></video>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="map"></div>
     <div id="speed-chart"></div>
     <div id="videoPlayer" style="display:none;">
@@ -29,11 +79,11 @@
         </div>
     </div>
 
-
     <script src="https://cdn.bootcdn.net/ajax/libs/leaflet/1.0.2/leaflet.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/leaflet.draw/1.0.2/leaflet.draw.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/plotly.js/2.34.0/plotly.min.js"></script>
-	<script src="https://cdn.bootcdn.net/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.2.31/vue.global.prod.js"></script>
     <script src="gpmf.js"></script>
     <script src="gopro.js"></script>
     <script src="laper.js">
