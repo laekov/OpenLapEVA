@@ -23,6 +23,47 @@ const colormap = [
     'rgb(188, 189, 34)'
 ];
 
+function getVideoElements() {
+	let out = [];
+	if (lapsel.length > 0) {
+		for (var i in lapsel) {
+			var lapIndex = lapsel[i];
+			out.push(document.getElementById(`ve${lapIndex}`));
+		}
+	} else {
+		out.push(document.getElementById('videoElement'));
+	}
+	return out;
+}
+
+function f3(v) {
+	if (!v) {
+		return v;
+	}
+	if (typeof(v) === 'string') {
+		return v;
+	}
+	const s = String(v).split('.');
+	if (s.length == 1) {
+		return s[0] + '.000';
+	} else {
+		return s[0] + '.' + (s[1] + '000').slice(0, 3);
+	}
+};
+
+function findFrame(points, target, getkey) {
+    let left = 0, right = points.length;
+    while (left + 1 < right) {
+        let mid = (left + right) >> 1;
+        if (target < getkey(points[mid])) {
+            right = mid;
+        } else {
+            left = mid + 1;
+        }
+    }
+    return left;
+}
+
 function parseFile(file) {
     if (file) {
         const type = file.type;
@@ -32,8 +73,8 @@ function parseFile(file) {
         };
         laps.push({
             name: file.name,
-            idx: 'pending',
-            laptime: '-'
+            idx: 0,
+            laptime: 'Processing'
         });
         reader.onload = function(e) {
             const contents = e.target.result;
@@ -56,7 +97,6 @@ function parseFile(file) {
             videoElement.src = runs[file.name].video;
             videoElement.load();
             // videoElement.play();
-            document.getElementById('videoPlayer').style.display = 'block';
             reader.readAsArrayBuffer(file);
         }
     }
@@ -172,9 +212,12 @@ function updateTrail(name, points) {
     laps.pop();
     if (startLine) {
         runs[name].laps = splitIntoLaps(points, startLine);
+		const fastest = runs[name].laps.slice(1, -1).map(l => l.laptime).reduce((a, b) => Math.min(a, b));
         for (var i in runs[name].laps) {
             runs[name].laps[i].name = name;
             runs[name].laps[i].idx = i;
+			const gap = runs[name].laps[i].laptime - fastest;
+			runs[name].laps[i].gap = gap == 0 ? '-' : '+' + f3(gap);
             laps.push(runs[name].laps[i]);
         }
         // displaySpeedChart();
@@ -324,9 +367,6 @@ function removeMarkerFromMap() {
     }
 }
 
-const videoElement = document.getElementById('videoElement');
-
-
 function displaySpeedChart() {
     let lapSpeedTraces = [];
 
@@ -368,26 +408,38 @@ function displaySpeedChart() {
 
     const chart = document.getElementById('speed-chart');
     chart.on('plotly_hover', function(eventData) {
-        var points = eventData.points;
+		getVideoElements().map(v => v.pause());
+        var curve_points = eventData.points;
         let delta;
-        for (var i = 0; i < points.length; ++i) {
-            var point = points[i];
-            var lapIndex = lapsel[point.curveNumber];
-            const color = colormap[point.curveNumber % colormap.length];
-            var pointIndex = point.pointNumber;
+        for (var i = 0; i < curve_points.length; ++i) {
+            var curve_point = curve_points[i];
+            var lapIndex = lapsel[curve_point.curveNumber];
+            const color = colormap[curve_point.curveNumber % colormap.length];
+            var pointIndex = curve_point.pointNumber;
             var point = laps[lapIndex].posses[pointIndex];
             var latitude = point.lat;
             var longitude = point.lon;
-            showMarkerOnMap(lapIndex, latitude, longitude, colormap[color]);
+            // showMarkerOnMap(lapIndex, latitude, longitude, colormap[color]);
             if ('cts' in point) {
                 document.getElementById(`ve${lapIndex}`).currentTime = point.cts / 1000;
             }
-            delta = point.cts - laps[lapIndex].posses[0].cts;
+			if (selected === 'distance') {
+				delta = laps[lapIndex].distances[pointIndex];
+			} else {
+				delta = point.cts - laps[lapIndex].posses[0].cts;
+			}
         }
         for (var i in lapsel) {
-            if (!points.includes(i)) {
-                var lapIndex = lapsel[i];
-                document.getElementById(`ve${lapIndex}`).currentTime = (laps[lapIndex].posses[0].cts + delta) / 1000;
+            if (!curve_points.includes(i)) {
+				const lapIndex = lapsel[i];
+				let dt;
+				if (selected === 'distance') {
+					const p = findFrame(laps[lapIndex].distances, delta, x => x);
+					dt = laps[lapIndex].posses[p].cts / 1e3
+				} else {
+					dt = (laps[lapIndex].posses[0].cts + delta) / 1000;
+				}
+                document.getElementById(`ve${lapIndex}`).currentTime = dt;
             }
         }
     });
@@ -396,45 +448,6 @@ function displaySpeedChart() {
         removeMarkerFromMap();
     });
 }
-
-function findFrame(points, target) {
-    let left = 0, right = points.length;
-    while (left + 1 < right) {
-        let mid = (left + right) >> 1;
-        if (target < rawtrail[mid].cts) {
-            right = mid;
-        } else {
-            left = mid + 1;
-        }
-    }
-    return left;
-}
-
-videoElement.addEventListener("timeupdate", () => {
-    const t = videoElement.currentTime * 1e3;
-    if (rawtrail && 'cts' in rawtrail[0]) {
-        let p = findFrame(rawtrail, t);
-        showMarkerOnMap(0, rawtrail[p].lat, rawtrail[p].lon, 'red');
-    }
-});
-
-document.getElementById('nextFrame').addEventListener('click', () => {
-    const t = videoElement.currentTime * 1e3;
-    let p = findFrame(rawtrail, t);
-    if (rawtrail[p + 1].cts < t + 10) {
-        ++p;
-    }
-    videoElement.currentTime = rawtrail[p + 1].cts * 1e-3;
-});
-
-document.getElementById('prevFrame').addEventListener('click', () => {
-    const t = videoElement.currentTime * 1e3;
-    let p = findFrame(rawtrail, t);
-    if (rawtrail[p - 1].cts > t - 10) {
-        --p;
-    }
-    videoElement.currentTime = rawtrail[p - 1].cts * 1e-3;
-});
 
 const { createApp, ref } = Vue;
 
@@ -472,9 +485,79 @@ createApp({
             singleClick,
             doubleClick,
             isSelected,
+			f3,
             laps: ref(laps),
             runs: ref(runs),
             colormap: ref(colormap)
         };
     }
 }).mount('#laptable');
+
+createApp({
+    setup() {
+        const selectedRows = ref(lapsel);
+
+		const handleVeUpdate = () => {
+			const ves = getVideoElements();
+			for (var i = 0; i < lapsel.length; ++i) {
+				const t = ves[i].currentTime * 1e3;
+				var lapIndex = lapsel[i];
+				const points = laps[lapIndex].points;
+				let p = findFrame(points, t, p => p.cts);
+				showMarkerOnMap(lapIndex, points[p].lat, points[p].lon,
+					colormap[i % colormap.length]);
+			}
+		};
+
+		const handleRawUpdate = () => {
+			const videoElement = document.getElementById('videoElement');
+			const t = videoElement.currentTime * 1e3;
+			if (rawtrail && 'cts' in rawtrail[0]) {
+				let p = findFrame(rawtrail, t, p => p.cts);
+				showMarkerOnMap(0, rawtrail[p].lat, rawtrail[p].lon, 'red');
+			}
+		};
+
+		const nextFrame = () => {
+			const videoElement = document.getElementById('videoElement');
+			const t = videoElement.currentTime * 1e3;
+			let p = findFrame(rawtrail, t, p => p.cts);
+			if (rawtrail[p + 1].cts < t + 10) {
+				++p;
+			}
+			videoElement.currentTime = rawtrail[p + 1].cts * 1e-3;
+		};
+
+		const prevFrame = () => {
+			const videoElement = document.getElementById('videoElement');
+			const t = videoElement.currentTime * 1e3;
+			let p = findFrame(rawtrail, t);
+			if (rawtrail[p - 1].cts > t - 10) {
+				--p;
+			}
+			videoElement.currentTime = rawtrail[p - 1].cts * 1e-3;
+		};
+
+		const play = () => {
+			getVideoElements().map(v => v.play());
+		};
+
+		const pause = () => {
+			getVideoElements().map(v => v.pause());
+		};
+
+        return {
+            laps: ref(laps),
+            runs: ref(runs),
+            colormap: ref(colormap),
+			handleRawUpdate,
+			handleVeUpdate,
+			nextFrame,
+			prevFrame,
+			play,
+			pause,
+			selectedRows
+        };
+    }
+}).mount('#lapvideos');
+

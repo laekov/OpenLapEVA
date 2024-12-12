@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" rel="stylesheet">
     <style>
         #map { height: 400px; }
-        #speed-chart { height: 400px; }
+        #speed-chart { height: 30%; }
         .video-wrapper {
             position: relative;
             padding-bottom: 56.25%; /* 16:9 aspect ratio */
@@ -46,6 +46,7 @@
 									<th></th>
 									<th>Name</th>
 									<th>Laptime</th>
+									<th>Gap</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -56,22 +57,12 @@
 									<td :style="{ 'backgroundColor': isSelected(index) ? colormap[selectedRows.indexOf(index) % colormap.length] : '#afafaf'}">
 										<span>  </span>
 									</td>
-									<td>{{ item.name }} - {{ item.idx }}</td>
-									<td>{{ item.laptime }}</td>
+									<td class='fs-6'>{{ (item.idx <= 0) ? item.name : item.idx }}</td>
+									<td>{{ f3(item.laptime) }}</td>
+									<td>{{ f3(item.gap) }}</td>
 								</tr>
 							</tbody>
 						</table>
-						<div class='row'>
-							<div class='col-sm' v-for="i in selectedRows">
-								<p>
-								<span :style="{ 'backgroundColor': colormap[selectedRows.indexOf(i) % colormap.length] }">__</span>
-								{{ laps[i].name }} lap {{ laps[i].idx }}
-								</p>
-								<div class="video-wrapper">
-									<video :id="'ve' + i" controls :src='runs[laps[i].name].video'></video>
-								</div>
-							</div>
-						</div>
 					</div>
 				</div>
 			</div>
@@ -95,7 +86,7 @@
 					</div>
 				</div>
 				<div class="row">
-					<div class="col-md-6">
+					<div class="col-md-4">
 						<div class="card">
 							<div class="card-header">
 								Map
@@ -105,18 +96,35 @@
 							</div>
 						</div>
 					</div>
-					<div class="col-md-6">
+					<div class="col-md-8">
 						<div class="card">
 							<div class="card-header">
 								Video
 							</div>
 							<div class="card-body">
-								<div id="video-controls">
-									<button id="prevFrame">Previous Frame</button>
-									<button id="nextFrame">Next Frame</button>
-								</div>
-								<div id="videoPlayer" style="display:none;">
-									<video id="videoElement" controls></video>
+								<div id="lapvideos">
+									<div id="video-controls">
+										<button class='btn btn-primary' @click='prevFrame' v-show="selectedRows.length == 0">Previous Frame</button>
+										<button class='btn btn-success' @click='play'>Play</button>
+										<button class='btn btn-danger' @click='pause'>Pause</button>
+										<button class='btn btn-primary' @click='nextFrame' v-show="selectedRows.length == 0">Next Frame</button>
+									</div>
+									<div class='row'>
+										<div class='col-6' v-for="i in selectedRows">
+											<p>
+											<span :style="{ 'backgroundColor': colormap[selectedRows.indexOf(i) % colormap.length] }">__</span>
+											{{ laps[i].name }} lap {{ laps[i].idx }}
+											</p>
+											<div class="video-wrapper">
+												<video :id="'ve' + i" controls
+													@timeupdate='handleVeUpdate'
+													:src='runs[laps[i].name].video'></video>
+											</div>
+										</div>
+									</div>
+									<div class='row' id="videoPlayer" v-show="selectedRows.length == 0">
+										<video id="videoElement" @timeupdate='handleRawUpdate' controls></video>
+									</div>
 								</div>
 							</div>
 						</div>
