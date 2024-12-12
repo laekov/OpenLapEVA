@@ -28,120 +28,120 @@
 </head>
 <body>
 
-	<nav class="navbar navbar-expand-lg navbar-light bg-light">
-		<div class="container-fluid">
-			<a class="navbar-brand" href="#">open Lap EVA</a>
-		</div>
-	</nav>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">open Lap EVA</a>
+        </div>
+    </nav>
 
-	<div class="container-fluid">
-		<div class="row">
-			<div class="col-md-4 col-lg-3">
-				<div class="d-flex flex-column flex-shrink-0 p-3" style="height: 100vh;">
-					<input type="file" id="file-input" accept=".gpx, video/mp4, .lrv, .LRV"/>
-					<div id="laptable">
-						<table class="table">
-							<thead>
-								<tr>
-									<th></th>
-									<th>Name</th>
-									<th>Laptime</th>
-									<th>Gap</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr v-for="(item, index) in data" :key="index"
-									@click="singleClick(index)"
-									@dblclick="doubleClick(index)"
-									>
-									<td :style="{ 'backgroundColor': isSelected(index) ? colormap[selectedRows.indexOf(index) % colormap.length] : '#afafaf'}">
-										<span>  </span>
-									</td>
-									<td class='fs-6'>{{ (item.idx <= 0) ? item.name : item.idx }}</td>
-									<td>{{ f3(item.laptime) }}</td>
-									<td>{{ f3(item.gap) }}</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-4 col-lg-3">
+                <div class="d-flex flex-column flex-shrink-0 p-3" style="height: 100vh;">
+                    <input type="file" id="file-input" accept=".gpx, video/mp4, .lrv, .LRV"/>
+                    <div id="laptable">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Name</th>
+                                    <th>Laptime</th>
+                                    <th>Gap</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item, index) in data" :key="index"
+                                    @click="singleClick(index)"
+                                    @dblclick="doubleClick(index)"
+                                    >
+                                    <td :style="{ 'backgroundColor': isSelected(index) ? colormap[selectedRows.indexOf(index) % colormap.length] : '#afafaf'}">
+                                        <span>  </span>
+                                    </td>
+                                    <td class='fs-6'>{{ (item.idx <= 0) ? item.name : item.idx }}</td>
+                                    <td>{{ f3(item.laptime) }}</td>
+                                    <td>{{ f3(item.gap) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-			<div class="col-md-8 col-lg-9">
-				<div class="row">
-					<div class='col'>
-						<div class="card">
-							<div class="card-header">
-								Speed Curve
-							</div>
-							<div class="card-body">
-								<label> X-axis type</label>
-								<select id="chart-selector">
-									<option value="distance">Distance</option>
-									<option value="time">Time</option>
-								</select>
-								<div id="speed-chart"></div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="row">
-					<div class="col-md-4">
-						<div class="card">
-							<div class="card-header">
-								Map
-							</div>
-							<div class="card-body">
-								<div id="map"></div>
-							</div>
-						</div>
-					</div>
-					<div class="col-md-8">
-						<div class="card">
-							<div class="card-header">
-								Video
-							</div>
-							<div class="card-body">
-								<div id="lapvideos">
-									<div id="video-controls">
-										<button class='btn btn-primary' @click='prevFrame' v-show="selectedRows.length == 0">Previous Frame</button>
-										<button class='btn btn-success' @click='play'>Play</button>
-										<button class='btn btn-danger' @click='pause'>Pause</button>
-										<button class='btn btn-primary' @click='nextFrame' v-show="selectedRows.length == 0">Next Frame</button>
-									</div>
-									<div class='row'>
-										<div class='col-6' v-for="i in selectedRows">
-											<p>
-											<span :style="{ 'backgroundColor': colormap[selectedRows.indexOf(i) % colormap.length] }">__</span>
-											{{ laps[i].name }} lap {{ laps[i].idx }}
-											</p>
-											<div class="video-wrapper">
-												<video :id="'ve' + i" controls
-													@timeupdate='handleVeUpdate'
-													:src='runs[laps[i].name].video'></video>
-											</div>
-										</div>
-									</div>
-									<div class='row' id="videoPlayer" v-show="selectedRows.length == 0">
-										<video id="videoElement" @timeupdate='handleRawUpdate' controls></video>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<script src="https://cdn.bootcdn.net/ajax/libs/leaflet/1.0.2/leaflet.js"></script>
-	<script src="https://cdn.bootcdn.net/ajax/libs/leaflet.draw/1.0.2/leaflet.draw.js"></script>
-	<script src="https://cdn.bootcdn.net/ajax/libs/plotly.js/2.34.0/plotly.min.js"></script>
-	<script src="https://cdn.bootcdn.net/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
-	<script src="https://cdn.bootcdn.net/ajax/libs/vue/3.2.31/vue.global.prod.js"></script>
+            <div class="col-md-8 col-lg-9">
+                <div class="row">
+                    <div class='col'>
+                        <div class="card">
+                            <div class="card-header">
+                                Speed Curve
+                            </div>
+                            <div class="card-body">
+                                <label> X-axis type</label>
+                                <select id="chart-selector">
+                                    <option value="distance">Distance</option>
+                                    <option value="time">Time</option>
+                                </select>
+                                <div id="speed-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                Map
+                            </div>
+                            <div class="card-body">
+                                <div id="map"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                Video
+                            </div>
+                            <div class="card-body">
+                                <div id="lapvideos">
+                                    <div id="video-controls">
+                                        <button class='btn btn-primary' @click='prevFrame' v-show="selectedRows.length == 0">Previous Frame</button>
+                                        <button class='btn btn-success' @click='play'>Play</button>
+                                        <button class='btn btn-danger' @click='pause'>Pause</button>
+                                        <button class='btn btn-primary' @click='nextFrame' v-show="selectedRows.length == 0">Next Frame</button>
+                                    </div>
+                                    <div class='row'>
+                                        <div class='col-6' v-for="i in selectedRows">
+                                            <p>
+                                            <span :style="{ 'backgroundColor': colormap[selectedRows.indexOf(i) % colormap.length] }">__</span>
+                                            {{ laps[i].name }} lap {{ laps[i].idx }}
+                                            </p>
+                                            <div class="video-wrapper">
+                                                <video :id="'ve' + i" controls
+                                                    @timeupdate='handleVeUpdate'
+                                                    :src='runs[laps[i].name].video'></video>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class='row' id="videoPlayer" v-show="selectedRows.length == 0">
+                                        <video id="videoElement" @timeupdate='handleRawUpdate' controls></video>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.bootcdn.net/ajax/libs/leaflet/1.0.2/leaflet.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/leaflet.draw/1.0.2/leaflet.draw.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/plotly.js/2.34.0/plotly.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.2.31/vue.global.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
-	<script src="gpmf.js"></script>
-	<script src="gopro.js"></script>
-	<script src="laper.js"></script>
+    <script src="gpmf.js"></script>
+    <script src="gopro.js"></script>
+    <script src="laper.js"></script>
 </body>
 </html>

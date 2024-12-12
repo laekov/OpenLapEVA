@@ -24,31 +24,31 @@ const colormap = [
 ];
 
 function getVideoElements() {
-	let out = [];
-	if (lapsel.length > 0) {
-		for (var i in lapsel) {
-			var lapIndex = lapsel[i];
-			out.push(document.getElementById(`ve${lapIndex}`));
-		}
-	} else {
-		out.push(document.getElementById('videoElement'));
-	}
-	return out;
+    let out = [];
+    if (lapsel.length > 0) {
+        for (var i in lapsel) {
+            var lapIndex = lapsel[i];
+            out.push(document.getElementById(`ve${lapIndex}`));
+        }
+    } else {
+        out.push(document.getElementById('videoElement'));
+    }
+    return out;
 }
 
 function f3(v) {
-	if (!v) {
-		return v;
-	}
-	if (typeof(v) === 'string') {
-		return v;
-	}
-	const s = String(v).split('.');
-	if (s.length == 1) {
-		return s[0] + '.000';
-	} else {
-		return s[0] + '.' + (s[1] + '000').slice(0, 3);
-	}
+    if (!v) {
+        return v;
+    }
+    if (typeof(v) === 'string') {
+        return v;
+    }
+    const s = String(v).split('.');
+    if (s.length == 1) {
+        return s[0] + '.000';
+    } else {
+        return s[0] + '.' + (s[1] + '000').slice(0, 3);
+    }
 };
 
 function findFrame(points, target, getkey) {
@@ -212,12 +212,12 @@ function updateTrail(name, points) {
     laps.pop();
     if (startLine) {
         runs[name].laps = splitIntoLaps(points, startLine);
-		const fastest = runs[name].laps.slice(1, -1).map(l => l.laptime).reduce((a, b) => Math.min(a, b));
+        const fastest = runs[name].laps.slice(1, -1).map(l => l.laptime).reduce((a, b) => Math.min(a, b));
         for (var i in runs[name].laps) {
             runs[name].laps[i].name = name;
             runs[name].laps[i].idx = i;
-			const gap = runs[name].laps[i].laptime - fastest;
-			runs[name].laps[i].gap = gap == 0 ? '-' : '+' + f3(gap);
+            const gap = runs[name].laps[i].laptime - fastest;
+            runs[name].laps[i].gap = gap == 0 ? '-' : '+' + f3(gap);
             laps.push(runs[name].laps[i]);
         }
         // displaySpeedChart();
@@ -408,7 +408,7 @@ function displaySpeedChart() {
 
     const chart = document.getElementById('speed-chart');
     chart.on('plotly_hover', function(eventData) {
-		getVideoElements().map(v => v.pause());
+        getVideoElements().map(v => v.pause());
         var curve_points = eventData.points;
         let delta;
         for (var i = 0; i < curve_points.length; ++i) {
@@ -423,22 +423,22 @@ function displaySpeedChart() {
             if ('cts' in point) {
                 document.getElementById(`ve${lapIndex}`).currentTime = point.cts / 1000;
             }
-			if (selected === 'distance') {
-				delta = laps[lapIndex].distances[pointIndex];
-			} else {
-				delta = point.cts - laps[lapIndex].posses[0].cts;
-			}
+            if (selected === 'distance') {
+                delta = laps[lapIndex].distances[pointIndex];
+            } else {
+                delta = point.cts - laps[lapIndex].posses[0].cts;
+            }
         }
         for (var i in lapsel) {
             if (!curve_points.includes(i)) {
-				const lapIndex = lapsel[i];
-				let dt;
-				if (selected === 'distance') {
-					const p = findFrame(laps[lapIndex].distances, delta, x => x);
-					dt = laps[lapIndex].posses[p].cts / 1e3
-				} else {
-					dt = (laps[lapIndex].posses[0].cts + delta) / 1000;
-				}
+                const lapIndex = lapsel[i];
+                let dt;
+                if (selected === 'distance') {
+                    const p = findFrame(laps[lapIndex].distances, delta, x => x);
+                    dt = laps[lapIndex].posses[p].cts / 1e3
+                } else {
+                    dt = (laps[lapIndex].posses[0].cts + delta) / 1000;
+                }
                 document.getElementById(`ve${lapIndex}`).currentTime = dt;
             }
         }
@@ -485,7 +485,7 @@ createApp({
             singleClick,
             doubleClick,
             isSelected,
-			f3,
+            f3,
             laps: ref(laps),
             runs: ref(runs),
             colormap: ref(colormap)
@@ -497,66 +497,66 @@ createApp({
     setup() {
         const selectedRows = ref(lapsel);
 
-		const handleVeUpdate = () => {
-			const ves = getVideoElements();
-			for (var i = 0; i < lapsel.length; ++i) {
-				const t = ves[i].currentTime * 1e3;
-				var lapIndex = lapsel[i];
-				const points = laps[lapIndex].points;
-				let p = findFrame(points, t, p => p.cts);
-				showMarkerOnMap(lapIndex, points[p].lat, points[p].lon,
-					colormap[i % colormap.length]);
-			}
-		};
+        const handleVeUpdate = () => {
+            const ves = getVideoElements();
+            for (var i = 0; i < lapsel.length; ++i) {
+                const t = ves[i].currentTime * 1e3;
+                var lapIndex = lapsel[i];
+                const points = laps[lapIndex].points;
+                let p = findFrame(points, t, p => p.cts);
+                showMarkerOnMap(lapIndex, points[p].lat, points[p].lon,
+                    colormap[i % colormap.length]);
+            }
+        };
 
-		const handleRawUpdate = () => {
-			const videoElement = document.getElementById('videoElement');
-			const t = videoElement.currentTime * 1e3;
-			if (rawtrail && 'cts' in rawtrail[0]) {
-				let p = findFrame(rawtrail, t, p => p.cts);
-				showMarkerOnMap(0, rawtrail[p].lat, rawtrail[p].lon, 'red');
-			}
-		};
+        const handleRawUpdate = () => {
+            const videoElement = document.getElementById('videoElement');
+            const t = videoElement.currentTime * 1e3;
+            if (rawtrail && 'cts' in rawtrail[0]) {
+                let p = findFrame(rawtrail, t, p => p.cts);
+                showMarkerOnMap(0, rawtrail[p].lat, rawtrail[p].lon, 'red');
+            }
+        };
 
-		const nextFrame = () => {
-			const videoElement = document.getElementById('videoElement');
-			const t = videoElement.currentTime * 1e3;
-			let p = findFrame(rawtrail, t, p => p.cts);
-			if (rawtrail[p + 1].cts < t + 10) {
-				++p;
-			}
-			videoElement.currentTime = rawtrail[p + 1].cts * 1e-3;
-		};
+        const nextFrame = () => {
+            const videoElement = document.getElementById('videoElement');
+            const t = videoElement.currentTime * 1e3;
+            let p = findFrame(rawtrail, t, p => p.cts);
+            if (rawtrail[p + 1].cts < t + 10) {
+                ++p;
+            }
+            videoElement.currentTime = rawtrail[p + 1].cts * 1e-3;
+        };
 
-		const prevFrame = () => {
-			const videoElement = document.getElementById('videoElement');
-			const t = videoElement.currentTime * 1e3;
-			let p = findFrame(rawtrail, t);
-			if (rawtrail[p - 1].cts > t - 10) {
-				--p;
-			}
-			videoElement.currentTime = rawtrail[p - 1].cts * 1e-3;
-		};
+        const prevFrame = () => {
+            const videoElement = document.getElementById('videoElement');
+            const t = videoElement.currentTime * 1e3;
+            let p = findFrame(rawtrail, t);
+            if (rawtrail[p - 1].cts > t - 10) {
+                --p;
+            }
+            videoElement.currentTime = rawtrail[p - 1].cts * 1e-3;
+        };
 
-		const play = () => {
-			getVideoElements().map(v => v.play());
-		};
+        const play = () => {
+            getVideoElements().map(v => v.play());
+        };
 
-		const pause = () => {
-			getVideoElements().map(v => v.pause());
-		};
+        const pause = () => {
+            getVideoElements().map(v => v.pause());
+        };
 
         return {
             laps: ref(laps),
             runs: ref(runs),
             colormap: ref(colormap),
-			handleRawUpdate,
-			handleVeUpdate,
-			nextFrame,
-			prevFrame,
-			play,
-			pause,
-			selectedRows
+            handleRawUpdate,
+            handleVeUpdate,
+            nextFrame,
+            prevFrame,
+            play,
+            pause,
+            selectedRows
         };
     }
 }).mount('#lapvideos');
