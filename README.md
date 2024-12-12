@@ -21,8 +21,11 @@ Here is [A simple demo of OpenLapEVA](https://laekov.com.cn/l/aper/) showing the
 * [x] Upload LRV / MP4 file
   * [x] Extract GPS data (and speed which is more accurate)
   * [x] Synchronous video play and track movement
-  * [ ] Comparing multiple videos
-* [ ]  (endless) UI improvement
+  * [x] Comparing multiple videos
+* [ ] Start / finish lines at different locations (for rallying, dh cycling, and etc.)
+* [ ] Map lap distances to lap 0 for more accurate x axis
+  * [ ] Display time loss / gain between two laps
+* [ ] (endless) UI improvement
 
 ## Contribution
 
