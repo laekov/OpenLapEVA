@@ -66,7 +66,7 @@ function findFrame(points, target, getkey) {
 
 function parseFile(file) {
     if (file) {
-        const type = file.type;
+        const type = file.name.split('.').at(-1).toLowerCase();
         const reader = new FileReader();
         runs[file.name] = {
             video: URL.createObjectURL(file)
@@ -74,23 +74,24 @@ function parseFile(file) {
         laps.push({
             name: file.name,
             idx: 0,
-            laptime: 'Processing'
+            laptime: 'Processing',
+			has_video: false
         });
         reader.onload = function(e) {
             const contents = e.target.result;
-            if (type === 'application/gpx+xml') {
-                updateTrail(file.name, parseGPX(contents));
+            if (type === 'gpx') {
+                updateTrail(file.name, parseGPX(contents), false);
             } else {
                 const binfile = new window.Buffer(contents);
                 window.GPMFExtract(binfile).then(res => {
                     window.GoProTelemetry(res, {}, telemetry => {
-                        updateTrail(file.name, parseGPMF(telemetry[1].streams.GPS5));
+                        updateTrail(file.name, parseGPMF(telemetry[1].streams.GPS5), true);
                     });
                 });
             }
         };
 
-        if (type === 'application/gpx+xml') {
+        if (type === 'gpx') {
             reader.readAsText(file);
         } else {
             const videoElement = document.getElementById('videoElement');
@@ -197,7 +198,7 @@ function parseGPMF(gps5) {
     return points;
 }
 
-function updateTrail(name, points) {
+function updateTrail(name, points, has_video) {
     if (!startLine) {
         for (let i in start_lines) {
             var p = start_lines[i].geometry.coordinates[0];
@@ -216,6 +217,7 @@ function updateTrail(name, points) {
         for (var i in runs[name].laps) {
             runs[name].laps[i].name = name;
             runs[name].laps[i].idx = i;
+            runs[name].laps[i].has_video = has_video;
             const gap = runs[name].laps[i].laptime - fastest;
             runs[name].laps[i].gap = gap == 0 ? '-' : '+' + f3(gap);
             laps.push(runs[name].laps[i]);
@@ -428,19 +430,24 @@ function displaySpeedChart() {
             } else {
                 delta = point.cts - laps[lapIndex].posses[0].cts;
             }
-        }
+			if (!laps[lapIndex].has_video) {
+				showMarkerOnMap(lapIndex, point.lat, point.lon, color);
+			}
+		}
         for (var i in lapsel) {
-            if (!curve_points.includes(i)) {
-                const lapIndex = lapsel[i];
-                let dt;
-                if (selected === 'distance') {
-                    const p = findFrame(laps[lapIndex].distances, delta, x => x);
-                    dt = laps[lapIndex].posses[p].cts / 1e3
-                } else {
-                    dt = (laps[lapIndex].posses[0].cts + delta) / 1000;
-                }
-                document.getElementById(`ve${lapIndex}`).currentTime = dt;
-            }
+			if (!curve_points.includes(i)) {
+				const lapIndex = lapsel[i];
+				let dt;
+				if (selected === 'distance') {
+					const p = findFrame(laps[lapIndex].distances, delta, x => x);
+					dt = laps[lapIndex].posses[p].cts / 1e3
+				} else {
+					dt = (laps[lapIndex].posses[0].cts + delta) / 1000;
+				}
+				if (laps[lapIndex].has_video) {
+					document.getElementById(`ve${lapIndex}`).currentTime = dt;
+				}
+			}
         }
     });
 
@@ -522,7 +529,7 @@ createApp({
             const videoElement = document.getElementById('videoElement');
             const t = videoElement.currentTime * 1e3;
             let p = findFrame(rawtrail, t, p => p.cts);
-            if (rawtrail[p + 1].cts < t + 10) {
+            if (rawtrail[p + 1].cts < t + 100) {
                 ++p;
             }
             videoElement.currentTime = rawtrail[p + 1].cts * 1e-3;
@@ -532,7 +539,7 @@ createApp({
             const videoElement = document.getElementById('videoElement');
             const t = videoElement.currentTime * 1e3;
             let p = findFrame(rawtrail, t);
-            if (rawtrail[p - 1].cts > t - 10) {
+            if (rawtrail[p - 1].cts > t - 100) {
                 --p;
             }
             videoElement.currentTime = rawtrail[p - 1].cts * 1e-3;
