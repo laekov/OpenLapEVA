@@ -23,8 +23,8 @@ Here is [A simple demo of OpenLapEVA](https://laekov.com.cn/l/aper/) showing the
   * [x] Synchronous video play and track movement
   * [x] Comparing multiple videos
 * [ ] Start / finish lines at different locations (for rallying, dh cycling, and etc.)
-* [ ] Map lap distances to lap 0 for more accurate x axis
-  * [ ] Display time loss / gain between two laps
+* [x] Map lap distances to lap 0 for more accurate x axis
+  * [x] Display time loss / gain between two laps
 * [ ] (endless) UI improvement
 
 ## Contribution

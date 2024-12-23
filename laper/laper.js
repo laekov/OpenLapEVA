@@ -228,6 +228,36 @@ function updateTrail(name, points, has_video) {
     }
 }
 
+function getRelDelta(ref, l, wnd=10) {
+	let dt = [];
+	let ld = [];
+	for (var i = 0, j = 0; j < l.posses.length; ++j) {
+		const wnd_s = Math.max(i - wnd, 0);
+		const wnd_e = Math.min(i + wnd, ref.posses.length - 1);
+
+		const p = turf.point([l.posses[j].lon, l.posses[j].lat]);
+		const qc = turf.point([ref.posses[i].lon, ref.posses[i].lat]);
+		var dmin = turf.distance(p, qc);
+
+		for (let k = wnd_s; k <= wnd_e; ++k) {
+			const qn = turf.point([ref.posses[k].lon, ref.posses[k].lat]);
+			const d = turf.distance(p, qn);
+			if (d < dmin) {
+				dmin = d;
+				i = k;
+			}
+		}
+		ld.push(ref.distances[i]);
+		const tp = l.posses[j].time;
+		const tq = ref.posses[i].time;
+		dt.push((tp - tq) * 1e-3);
+	}
+	return {
+		dt: dt,
+		distance: ld
+	};
+}
+
 function displayMap(points, color='red', show=true, scale=true) {
     if (!map) initMap();
     const coordinates = points.map(point => [point.lat, point.lon]);
@@ -289,11 +319,14 @@ function calculate_speeds(points) {
         distances.push(distances.at(-1) + distance * 1e-3); // km
         var pos = {
             lat: (p1.lat + p2.lat) / 2,
-            lon: (p1.lon + p2.lon) / 2
+            lon: (p1.lon + p2.lon) / 2,
+			time: ((p2.time - points[0].time) + (p1.time - points[0].time)) / 2
         }
         if ('cts' in p1 && 'cts' in p2) {
             pos.cts = (p1.cts + p2.cts) / 2;
-        }
+        } else {
+			pos.cts = ((p2.time - points[0].time) + (p1.time - points[0].time)) / 2 / 1000;
+		}
         posses.push(pos);
     }
     return [speeds, distances.slice(1), posses];
@@ -371,6 +404,7 @@ function removeMarkerFromMap() {
 
 function displaySpeedChart() {
     let lapSpeedTraces = [];
+	let dtTraces = [];
 
     const selector = document.getElementById('chart-selector');
     const selected = selector.value;
@@ -383,17 +417,32 @@ function displaySpeedChart() {
 
     for (var i in lapsel) {
         const lap = laps[lapsel[i]];
+		const delta = getRelDelta(laps[lapsel[0]], laps[lapsel[i]]);
+		laps[lapsel[i]].delta = delta;
         const color = colormap[i % colormap.length];
+		const t = f3(lap.laptime);
         lapSpeedTraces.push({
-            x: selected == 'distance' ? lap.distances : lap.times,
+            x: selected == 'distance' ? delta.distance : lap.times,
             y: lap.speeds,
             type: 'scatter',
             mode: 'lines',
-            name: `${lap.name} lap ${lap.idx} (${lap.laptime} s)`,
-            yaxis: 'y1',
-            visible: true,
+            name: `${lap.name} lap ${lap.idx} (${t} s)`,
+            yaxis: 'y',
             line: { color: color }
         });
+
+		if (selected === 'distance') {
+			dtTraces.push({
+				x: delta.distance,
+				y: delta.dt,
+				type: 'scatter',
+				mode: 'lines',
+				yaxis: 'y2',
+				line: { color: color, dash: 'dash' },
+				hoverinfo: 'none',
+				showlegend: false
+			});
+		}
 
         lap.trail.setStyle({ color: color });
         map.addLayer(lap.trail);
@@ -401,12 +450,25 @@ function displaySpeedChart() {
         map.fitBounds(coordinates);
     }
 
-    const layout = {
+    let layout = {
         title: 'Lap Speeds Over Distance',
         xaxis: { title: selected == 'distance' ? 'Distance / km' : 'Time / s' },
-        yaxis: { title: 'Speed (m/s)' }
+        yaxis: {
+			title: 'Speed (m/s)',
+			side: 'left',
+			showgrid: true
+		}
     };
-    Plotly.newPlot('speed-chart', lapSpeedTraces, layout);
+	if (selected === 'distance') {
+		layout.yaxis2 = {
+			title: 'Time Delta / s',
+			side: 'right',
+			overlaying: 'y',
+			showgrid: false,
+			zeroline: false
+		};
+	}
+    Plotly.newPlot('speed-chart', lapSpeedTraces.concat(dtTraces), layout);
 
     const chart = document.getElementById('speed-chart');
     chart.on('plotly_hover', function(eventData) {
@@ -415,6 +477,9 @@ function displaySpeedChart() {
         let delta;
         for (var i = 0; i < curve_points.length; ++i) {
             var curve_point = curve_points[i];
+			if (curve_point.yaxis._id == 'y2') {
+				continue;
+			}
             var lapIndex = lapsel[curve_point.curveNumber];
             const color = colormap[curve_point.curveNumber % colormap.length];
             var pointIndex = curve_point.pointNumber;
@@ -439,7 +504,7 @@ function displaySpeedChart() {
 				const lapIndex = lapsel[i];
 				let dt;
 				if (selected === 'distance') {
-					const p = findFrame(laps[lapIndex].distances, delta, x => x);
+					const p = findFrame(laps[lapIndex].delta.distance, delta, x => x);
 					dt = laps[lapIndex].posses[p].cts / 1e3
 				} else {
 					dt = (laps[lapIndex].posses[0].cts + delta) / 1000;
