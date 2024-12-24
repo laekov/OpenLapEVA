@@ -554,11 +554,18 @@ createApp({
             return selectedRows.value.includes(index);
         };
 
+        const clearLaps = () => {
+            laps.splice(0, laps.length);
+            lapsel.splice(0, lapsel.length);
+            startLine = undefined;
+        };
+
         return {
             data,
             selectedRows,
             singleClick,
             doubleClick,
+            clearLaps,
             isSelected,
             f3,
             laps: ref(laps),
