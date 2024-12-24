@@ -474,7 +474,7 @@ function displaySpeedChart() {
     chart.on('plotly_hover', function(eventData) {
         getVideoElements().map(v => v.pause());
         var curve_points = eventData.points;
-        let delta;
+        let delta = false;
         for (var i = 0; i < curve_points.length; ++i) {
             var curve_point = curve_points[i];
 			if (curve_point.yaxis._id == 'y2') {
@@ -498,6 +498,9 @@ function displaySpeedChart() {
 			if (!laps[lapIndex].has_video) {
 				showMarkerOnMap(lapIndex, point.lat, point.lon, color);
 			}
+		}
+		if (!delta) {
+			return;
 		}
         for (var i in lapsel) {
 			if (!curve_points.includes(i)) {
