@@ -47,6 +47,7 @@
                 <div class="d-flex flex-column flex-shrink-0 p-3" style="height: 100vh;">
                     <input type="file" id="file-input" accept=".gpx, video/mp4, .lrv, .LRV"/>
                     <div id="laptable">
+						<button class='btn btn-danger' @click='clearLaps' v-show="laps.length > 0">Clear Laps</button>
                         <table class="table">
                             <thead>
                                 <tr>
