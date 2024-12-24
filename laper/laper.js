@@ -75,7 +75,7 @@ function parseFile(file) {
             name: file.name,
             idx: 0,
             laptime: 'Processing',
-			has_video: false
+            has_video: false
         });
         reader.onload = function(e) {
             const contents = e.target.result;
@@ -229,33 +229,33 @@ function updateTrail(name, points, has_video) {
 }
 
 function getRelDelta(ref, l, wnd=10) {
-	let dt = [];
-	let ld = [];
-	for (var i = 0, j = 0; j < l.posses.length; ++j) {
-		const wnd_s = Math.max(i - wnd, 0);
-		const wnd_e = Math.min(i + wnd, ref.posses.length - 1);
+    let dt = [];
+    let ld = [];
+    for (var i = 0, j = 0; j < l.posses.length; ++j) {
+        const wnd_s = Math.max(i - wnd, 0);
+        const wnd_e = Math.min(i + wnd, ref.posses.length - 1);
 
-		const p = turf.point([l.posses[j].lon, l.posses[j].lat]);
-		const qc = turf.point([ref.posses[i].lon, ref.posses[i].lat]);
-		var dmin = turf.distance(p, qc);
+        const p = turf.point([l.posses[j].lon, l.posses[j].lat]);
+        const qc = turf.point([ref.posses[i].lon, ref.posses[i].lat]);
+        var dmin = turf.distance(p, qc);
 
-		for (let k = wnd_s; k <= wnd_e; ++k) {
-			const qn = turf.point([ref.posses[k].lon, ref.posses[k].lat]);
-			const d = turf.distance(p, qn);
-			if (d < dmin) {
-				dmin = d;
-				i = k;
-			}
-		}
-		ld.push(ref.distances[i]);
-		const tp = l.posses[j].time;
-		const tq = ref.posses[i].time;
-		dt.push((tp - tq) * 1e-3);
-	}
-	return {
-		dt: dt,
-		distance: ld
-	};
+        for (let k = wnd_s; k <= wnd_e; ++k) {
+            const qn = turf.point([ref.posses[k].lon, ref.posses[k].lat]);
+            const d = turf.distance(p, qn);
+            if (d < dmin) {
+                dmin = d;
+                i = k;
+            }
+        }
+        ld.push(ref.distances[i]);
+        const tp = l.posses[j].time;
+        const tq = ref.posses[i].time;
+        dt.push((tp - tq) * 1e-3);
+    }
+    return {
+        dt: dt,
+        distance: ld
+    };
 }
 
 function displayMap(points, color='red', show=true, scale=true) {
@@ -320,13 +320,13 @@ function calculate_speeds(points) {
         var pos = {
             lat: (p1.lat + p2.lat) / 2,
             lon: (p1.lon + p2.lon) / 2,
-			time: ((p2.time - points[0].time) + (p1.time - points[0].time)) / 2
+            time: ((p2.time - points[0].time) + (p1.time - points[0].time)) / 2
         }
         if ('cts' in p1 && 'cts' in p2) {
             pos.cts = (p1.cts + p2.cts) / 2;
         } else {
-			pos.cts = ((p2.time - points[0].time) + (p1.time - points[0].time)) / 2 / 1000;
-		}
+            pos.cts = ((p2.time - points[0].time) + (p1.time - points[0].time)) / 2 / 1000;
+        }
         posses.push(pos);
     }
     return [speeds, distances.slice(1), posses];
@@ -404,7 +404,7 @@ function removeMarkerFromMap() {
 
 function displaySpeedChart() {
     let lapSpeedTraces = [];
-	let dtTraces = [];
+    let dtTraces = [];
 
     const selector = document.getElementById('chart-selector');
     const selected = selector.value;
@@ -417,10 +417,10 @@ function displaySpeedChart() {
 
     for (var i in lapsel) {
         const lap = laps[lapsel[i]];
-		const delta = getRelDelta(laps[lapsel[0]], laps[lapsel[i]]);
-		laps[lapsel[i]].delta = delta;
+        const delta = getRelDelta(laps[lapsel[0]], laps[lapsel[i]]);
+        laps[lapsel[i]].delta = delta;
         const color = colormap[i % colormap.length];
-		const t = f3(lap.laptime);
+        const t = f3(lap.laptime);
         lapSpeedTraces.push({
             x: selected == 'distance' ? delta.distance : lap.times,
             y: lap.speeds,
@@ -431,18 +431,18 @@ function displaySpeedChart() {
             line: { color: color }
         });
 
-		if (selected === 'distance') {
-			dtTraces.push({
-				x: delta.distance,
-				y: delta.dt,
-				type: 'scatter',
-				mode: 'lines',
-				yaxis: 'y2',
-				line: { color: color, dash: 'dash' },
-				hoverinfo: 'none',
-				showlegend: false
-			});
-		}
+        if (selected === 'distance') {
+            dtTraces.push({
+                x: delta.distance,
+                y: delta.dt,
+                type: 'scatter',
+                mode: 'lines',
+                yaxis: 'y2',
+                line: { color: color, dash: 'dash' },
+                hoverinfo: 'none',
+                showlegend: false
+            });
+        }
 
         lap.trail.setStyle({ color: color });
         map.addLayer(lap.trail);
@@ -454,20 +454,20 @@ function displaySpeedChart() {
         title: 'Lap Speeds Over Distance',
         xaxis: { title: selected == 'distance' ? 'Distance / km' : 'Time / s' },
         yaxis: {
-			title: 'Speed (m/s)',
-			side: 'left',
-			showgrid: true
-		}
+            title: 'Speed (m/s)',
+            side: 'left',
+            showgrid: true
+        }
     };
-	if (selected === 'distance') {
-		layout.yaxis2 = {
-			title: 'Time Delta / s',
-			side: 'right',
-			overlaying: 'y',
-			showgrid: false,
-			zeroline: false
-		};
-	}
+    if (selected === 'distance') {
+        layout.yaxis2 = {
+            title: 'Time Delta / s',
+            side: 'right',
+            overlaying: 'y',
+            showgrid: false,
+            zeroline: false
+        };
+    }
     Plotly.newPlot('speed-chart', lapSpeedTraces.concat(dtTraces), layout);
 
     const chart = document.getElementById('speed-chart');
@@ -477,9 +477,9 @@ function displaySpeedChart() {
         let delta = false;
         for (var i = 0; i < curve_points.length; ++i) {
             var curve_point = curve_points[i];
-			if (curve_point.yaxis._id == 'y2') {
-				continue;
-			}
+            if (curve_point.yaxis._id == 'y2') {
+                continue;
+            }
             var lapIndex = lapsel[curve_point.curveNumber];
             const color = colormap[curve_point.curveNumber % colormap.length];
             var pointIndex = curve_point.pointNumber;
@@ -495,27 +495,27 @@ function displaySpeedChart() {
             } else {
                 delta = point.cts - laps[lapIndex].posses[0].cts;
             }
-			if (!laps[lapIndex].has_video) {
-				showMarkerOnMap(lapIndex, point.lat, point.lon, color);
-			}
-		}
-		if (!delta) {
-			return;
-		}
+            if (!laps[lapIndex].has_video) {
+                showMarkerOnMap(lapIndex, point.lat, point.lon, color);
+            }
+        }
+        if (!delta) {
+            return;
+        }
         for (var i in lapsel) {
-			if (!curve_points.includes(i)) {
-				const lapIndex = lapsel[i];
-				let dt;
-				if (selected === 'distance') {
-					const p = findFrame(laps[lapIndex].delta.distance, delta, x => x);
-					dt = laps[lapIndex].posses[p].cts / 1e3
-				} else {
-					dt = (laps[lapIndex].posses[0].cts + delta) / 1000;
-				}
-				if (laps[lapIndex].has_video) {
-					document.getElementById(`ve${lapIndex}`).currentTime = dt;
-				}
-			}
+            if (!curve_points.includes(i)) {
+                const lapIndex = lapsel[i];
+                let dt;
+                if (selected === 'distance') {
+                    const p = findFrame(laps[lapIndex].delta.distance, delta, x => x);
+                    dt = laps[lapIndex].posses[p].cts / 1e3
+                } else {
+                    dt = (laps[lapIndex].posses[0].cts + delta) / 1000;
+                }
+                if (laps[lapIndex].has_video) {
+                    document.getElementById(`ve${lapIndex}`).currentTime = dt;
+                }
+            }
         }
     });
 
