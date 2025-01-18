@@ -85,7 +85,18 @@ function parseFile(file) {
                 const binfile = new window.Buffer(contents);
                 window.GPMFExtract(binfile).then(res => {
                     window.GoProTelemetry(res, {}, telemetry => {
-                        updateTrail(file.name, parseGPMF(telemetry[1].streams.GPS5), true);
+                        var trail = null;
+                        if (telemetry[1].streams.GPS5) {
+                            trail = telemetry[1].streams.GPS5;
+                        }
+                        if (telemetry[1].streams.GPS9) {
+                            trail = telemetry[1].streams.GPS9;
+                        }
+                        if (!trail) {
+                            alert("GPS track is not found in the video. Please check the video or contact the developer");
+                            return;
+                        }
+                        updateTrail(file.name, parseGPMF(trail), true);
                     });
                 });
             }
