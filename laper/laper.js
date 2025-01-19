@@ -482,7 +482,7 @@ function displaySpeedChart() {
     Plotly.newPlot('speed-chart', lapSpeedTraces.concat(dtTraces), layout);
 
     const chart = document.getElementById('speed-chart');
-    chart.on('plotly_hover', function(eventData) {
+    const selfn = function(eventData) {
         getVideoElements().map(v => v.pause());
         var curve_points = eventData.points;
         let delta = false;
@@ -528,7 +528,11 @@ function displaySpeedChart() {
                 }
             }
         }
-    });
+    };
+
+    chart.on('plotly_hover', selfn);
+    chart.on('plotly_click', selfn);
+
 
     chart.on('plotly_unhover', function(eventData) {
         removeMarkerFromMap();
