@@ -9,7 +9,8 @@ let lap_count = 0;
 const start_lines = {
     'sdby-fengtai': turf.lineString([[116.194925, 39.794226], [116.195097, 39.794415]]),
     'sdby-aoyuan1314': turf.lineString([[116.389541,39.980746], [116.389766,39.980746]]),
-    'sdby-chongli': turf.lineString([[115.464764,40.903743],[115.464785,40.903994]])
+    'sdby-chongli': turf.lineString([[115.464764,40.903743],[115.464785,40.903994]]),
+    'tuke-xinlan': turf.lineString([[116.37492164969447,40.06991904441791],[116.37497931718828,40.06979588915595]])
 };
 
 const colormap = [
